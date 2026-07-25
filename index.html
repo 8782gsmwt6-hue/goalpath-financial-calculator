@@ -38,7 +38,7 @@
         </div>
       </div>
 
-      <form id="goalForm" class="card form-grid">
+      <form id="goalForm" class="card form-grid" novalidate>
         <label>
           Goal name
           <input id="goalName" type="text" value="Future Goal" maxlength="60" />
@@ -47,25 +47,25 @@
         <label>
           Goal amount
           <span class="input-prefix">$</span>
-          <input id="goalAmount" type="number" min="1" step="100" value="250000" />
+          <input id="goalAmount" type="text" inputmode="decimal" autocomplete="off" min="1" step="100" value="250000" />
         </label>
 
         <label>
           Current invested balance
           <span class="input-prefix">$</span>
-          <input id="startingBalance" type="number" min="0" step="100" value="25000" />
+          <input id="startingBalance" type="text" inputmode="decimal" autocomplete="off" min="0" step="100" value="25000" />
         </label>
 
         <label>
           Additional lump sum now
           <span class="input-prefix">$</span>
-          <input id="lumpSum" type="number" min="0" step="100" value="0" />
+          <input id="lumpSum" type="text" inputmode="decimal" autocomplete="off" min="0" step="100" value="0" />
         </label>
 
         <label id="monthlyContributionLabel">
           Monthly investment
           <span class="input-prefix">$</span>
-          <input id="monthlyContribution" type="number" min="0" step="25" value="1000" />
+          <input id="monthlyContribution" type="text" inputmode="decimal" autocomplete="off" min="0" step="25" value="1000" />
         </label>
 
         <label id="targetYearsLabel" class="hidden">
@@ -186,11 +186,11 @@
         </div>
       </div>
 
-      <form id="homeForm" class="card form-grid">
+      <form id="homeForm" class="card form-grid" novalidate>
         <label>
           Home price today
           <span class="input-prefix">$</span>
-          <input id="homePrice" type="number" min="1" step="1000" value="500000" />
+          <input id="homePrice" type="text" inputmode="decimal" autocomplete="off" min="1" step="1000" value="500000" />
         </label>
         <label>
           Down payment
@@ -201,17 +201,17 @@
         <label>
           Closing costs
           <span class="input-prefix">$</span>
-          <input id="closingCosts" type="number" min="0" step="500" value="15000" />
+          <input id="closingCosts" type="text" inputmode="decimal" autocomplete="off" min="0" step="500" value="15000" />
         </label>
         <label>
           Furnishing / repairs
           <span class="input-prefix">$</span>
-          <input id="repairReserve" type="number" min="0" step="500" value="25000" />
+          <input id="repairReserve" type="text" inputmode="decimal" autocomplete="off" min="0" step="500" value="25000" />
         </label>
         <label>
           Additional cash reserve
           <span class="input-prefix">$</span>
-          <input id="cashReserve" type="number" min="0" step="500" value="15000" />
+          <input id="cashReserve" type="text" inputmode="decimal" autocomplete="off" min="0" step="500" value="15000" />
         </label>
         <label>
           Years until purchase
@@ -226,7 +226,7 @@
         <label>
           Current home-fund balance
           <span class="input-prefix">$</span>
-          <input id="homeCurrentBalance" type="number" min="0" step="100" value="25000" />
+          <input id="homeCurrentBalance" type="text" inputmode="decimal" autocomplete="off" min="0" step="100" value="25000" />
         </label>
         <label>
           Expected annual investment return

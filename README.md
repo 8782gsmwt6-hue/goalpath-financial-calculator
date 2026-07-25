@@ -38,3 +38,8 @@ Goals are stored in browser local storage on the device/browser being used. They
 ## Important
 
 This application provides deterministic planning illustrations, not predictions, investment advice, tax advice, or guarantees. Actual investment returns, inflation, taxes, fees, and goal costs can differ.
+
+
+## Version 1.1
+
+Improved iPhone/Safari money-field handling. Amounts may now be entered or pasted with dollar signs, commas, spaces, or quotation marks.

@@ -29,7 +29,24 @@ function setMode(nextMode) {
   $("targetYearsLabel").classList.toggle("hidden", mode === "time");
 }
 
-function val(id) { return parseFloat($(id).value) || 0; }
+function val(id) {
+  const element = $(id);
+  if (!element) return 0;
+  const cleaned = String(element.value ?? "")
+    .replace(/[“”"'$,\s]/g, "")
+    .replace(/[^\d.+-]/g, "");
+  const parsed = Number.parseFloat(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatMoneyInput(element) {
+  if (!element) return;
+  const amount = val(element.id);
+  if (String(element.value).trim() === "") return;
+  element.value = amount.toLocaleString("en-US", {
+    maximumFractionDigits: 2
+  });
+}
 function netMonthlyRate(annual, fees = 0) { return (annual - fees) / 100 / 12; }
 function futureGoal(baseGoal, inflation, months, adjust) {
   return adjust ? baseGoal * Math.pow(1 + inflation / 100, months / 12) : baseGoal;
@@ -62,6 +79,37 @@ function project({goal, principal, monthly, annualReturn, fees, inflation, adjus
   }
   return {months: month, balance, contributions, growth: balance - contributions, target: futureGoal(goal, inflation, month, adjustInflation), rows, reached: balance >= futureGoal(goal, inflation, month, adjustInflation)};
 }
+
+
+const moneyInputIds = [
+  "goalAmount", "startingBalance", "lumpSum", "monthlyContribution",
+  "homePrice", "closingCosts", "repairReserve", "cashReserve",
+  "homeCurrentBalance"
+];
+
+moneyInputIds.forEach(id => {
+  const field = $(id);
+  if (!field) return;
+
+  field.addEventListener("focus", () => {
+    const amount = val(id);
+    field.value = amount || "";
+  });
+
+  field.addEventListener("blur", () => {
+    formatMoneyInput(field);
+  });
+
+  field.addEventListener("input", () => {
+    const cursor = field.selectionStart;
+    const original = field.value;
+    const cleaned = original.replace(/[“”"'$]/g, "");
+    if (cleaned !== original) {
+      field.value = cleaned;
+      try { field.setSelectionRange(cursor, cursor); } catch {}
+    }
+  });
+});
 
 $("goalForm").addEventListener("submit", e => { e.preventDefault(); calculateGoal(); });
 function calculateGoal() {
@@ -262,3 +310,6 @@ $("themeToggle").addEventListener("click",()=>{document.body.classList.toggle("d
 if(localStorage.getItem("goalpath_theme")==="dark")document.body.classList.add("dark");
 function toast(message){const t=$("toast");t.textContent=message;t.classList.add("show");clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove("show"),2500);}
 window.addEventListener("resize",()=>{if(lastProjection)drawChart(lastProjection.rows)});
+
+
+moneyInputIds.forEach(id => formatMoneyInput($(id)));
