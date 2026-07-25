@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#102a43" />
+  <meta name="description" content="A private, device-based financial goal calculator with scenario analysis and trusted research links." />
+  <title>GoalPath Financial Calculator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">PERSONAL FINANCIAL PLANNING</p>
+      <h1>GoalPath</h1>
+      <p class="subtitle">Plan the money, time, and assumptions behind your next financial goal.</p>
+    </div>
+    <button id="themeToggle" class="icon-button" aria-label="Toggle dark mode">◐</button>
+  </header>
+
+  <nav class="tabs" aria-label="Main navigation">
+    <button class="tab active" data-view="planner">Goal Planner</button>
+    <button class="tab" data-view="home">Second Home</button>
+    <button class="tab" data-view="saved">Saved Goals</button>
+    <button class="tab" data-view="learn">Research</button>
+  </nav>
+
+  <main>
+    <section id="planner" class="view active">
+      <div class="card intro-card">
+        <div>
+          <h2>Build your goal</h2>
+          <p>Choose whether to calculate the time required or the recurring investment needed.</p>
+        </div>
+        <div class="segmented" role="group" aria-label="Calculator mode">
+          <button id="modeTime" class="segment active">Time to Goal</button>
+          <button id="modeContribution" class="segment">Required Investment</button>
+        </div>
+      </div>
+
+      <form id="goalForm" class="card form-grid">
+        <label>
+          Goal name
+          <input id="goalName" type="text" value="Future Goal" maxlength="60" />
+        </label>
+
+        <label>
+          Goal amount
+          <span class="input-prefix">$</span>
+          <input id="goalAmount" type="number" min="1" step="100" value="250000" />
+        </label>
+
+        <label>
+          Current invested balance
+          <span class="input-prefix">$</span>
+          <input id="startingBalance" type="number" min="0" step="100" value="25000" />
+        </label>
+
+        <label>
+          Additional lump sum now
+          <span class="input-prefix">$</span>
+          <input id="lumpSum" type="number" min="0" step="100" value="0" />
+        </label>
+
+        <label id="monthlyContributionLabel">
+          Monthly investment
+          <span class="input-prefix">$</span>
+          <input id="monthlyContribution" type="number" min="0" step="25" value="1000" />
+        </label>
+
+        <label id="targetYearsLabel" class="hidden">
+          Years to reach goal
+          <input id="targetYears" type="number" min="0.1" max="80" step="0.1" value="10" />
+        </label>
+
+        <label>
+          Expected annual return
+          <button type="button" class="info-link" data-topic="returns" aria-label="Research historical investment returns">ⓘ</button>
+          <span class="input-suffix">%</span>
+          <input id="annualReturn" type="number" min="-20" max="30" step="0.1" value="7" />
+        </label>
+
+        <label>
+          Annual investment fees
+          <button type="button" class="info-link" data-topic="fees" aria-label="Learn about investment fees">ⓘ</button>
+          <span class="input-suffix">%</span>
+          <input id="annualFees" type="number" min="0" max="10" step="0.05" value="0.15" />
+        </label>
+
+        <label>
+          Inflation assumption
+          <button type="button" class="info-link" data-topic="inflation" aria-label="Research inflation">ⓘ</button>
+          <span class="input-suffix">%</span>
+          <input id="inflationRate" type="number" min="0" max="15" step="0.1" value="3" />
+        </label>
+
+        <label class="toggle-row">
+          <span>
+            Inflate the goal over time
+            <small>Preserves the goal's purchasing power.</small>
+          </span>
+          <input id="adjustForInflation" type="checkbox" />
+        </label>
+
+        <label>
+          Contribution timing
+          <select id="contributionTiming">
+            <option value="end">End of month</option>
+            <option value="beginning">Beginning of month</option>
+          </select>
+        </label>
+
+        <label>
+          Annual contribution increase
+          <button type="button" class="info-link" data-topic="contributions" aria-label="Learn about increasing contributions">ⓘ</button>
+          <span class="input-suffix">%</span>
+          <input id="contributionGrowth" type="number" min="0" max="20" step="0.5" value="0" />
+        </label>
+
+        <div class="form-actions full-width">
+          <button type="submit" class="primary">Calculate Goal</button>
+          <button type="button" id="saveGoal" class="secondary">Save Goal</button>
+          <button type="button" id="resetGoal" class="ghost">Reset</button>
+        </div>
+      </form>
+
+      <section id="results" class="results hidden" aria-live="polite">
+        <div class="result-hero card">
+          <p class="eyebrow">PROJECTED OUTCOME</p>
+          <h2 id="resultHeadline"></h2>
+          <p id="resultSummary"></p>
+          <div id="healthBadge" class="health-badge"></div>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric card"><span>Projected goal</span><strong id="metricGoal"></strong></article>
+          <article class="metric card"><span>Time required</span><strong id="metricTime"></strong></article>
+          <article class="metric card"><span>Your contributions</span><strong id="metricContributions"></strong></article>
+          <article class="metric card"><span>Estimated growth</span><strong id="metricGrowth"></strong></article>
+        </div>
+
+        <div id="assumptionWarnings" class="card warning-card"></div>
+
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <h3>Scenario comparison</h3>
+              <p>See how lower and higher returns change the plan.</p>
+            </div>
+          </div>
+          <div id="scenarioCards" class="scenario-grid"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <h3>Growth projection</h3>
+              <p>Projected balance versus the amount you contribute.</p>
+            </div>
+          </div>
+          <canvas id="growthChart" width="900" height="360" aria-label="Projected financial growth chart"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <h3>Annual projection</h3>
+              <p>Figures are estimates and are not guaranteed.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Year</th><th>Contributed</th><th>Growth</th><th>Balance</th><th>Goal</th></tr></thead>
+              <tbody id="projectionTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section id="home" class="view">
+      <div class="card intro-card">
+        <div>
+          <h2>Second-home planner 🏡</h2>
+          <p>Build the full cash target—not just the down payment.</p>
+        </div>
+      </div>
+
+      <form id="homeForm" class="card form-grid">
+        <label>
+          Home price today
+          <span class="input-prefix">$</span>
+          <input id="homePrice" type="number" min="1" step="1000" value="500000" />
+        </label>
+        <label>
+          Down payment
+          <button type="button" class="info-link" data-topic="downpayment" aria-label="Learn about down payments">ⓘ</button>
+          <span class="input-suffix">%</span>
+          <input id="downPaymentPct" type="number" min="0" max="100" step="1" value="20" />
+        </label>
+        <label>
+          Closing costs
+          <span class="input-prefix">$</span>
+          <input id="closingCosts" type="number" min="0" step="500" value="15000" />
+        </label>
+        <label>
+          Furnishing / repairs
+          <span class="input-prefix">$</span>
+          <input id="repairReserve" type="number" min="0" step="500" value="25000" />
+        </label>
+        <label>
+          Additional cash reserve
+          <span class="input-prefix">$</span>
+          <input id="cashReserve" type="number" min="0" step="500" value="15000" />
+        </label>
+        <label>
+          Years until purchase
+          <input id="homeYears" type="number" min="0.1" max="50" step="0.5" value="8" />
+        </label>
+        <label>
+          Expected annual home appreciation
+          <button type="button" class="info-link" data-topic="housing" aria-label="Research historical home prices">ⓘ</button>
+          <span class="input-suffix">%</span>
+          <input id="homeAppreciation" type="number" min="-10" max="20" step="0.1" value="3" />
+        </label>
+        <label>
+          Current home-fund balance
+          <span class="input-prefix">$</span>
+          <input id="homeCurrentBalance" type="number" min="0" step="100" value="25000" />
+        </label>
+        <label>
+          Expected annual investment return
+          <button type="button" class="info-link" data-topic="returns" aria-label="Research historical investment returns">ⓘ</button>
+          <span class="input-suffix">%</span>
+          <input id="homeReturn" type="number" min="-20" max="30" step="0.1" value="6" />
+        </label>
+        <label>
+          Annual investment fees
+          <span class="input-suffix">%</span>
+          <input id="homeFees" type="number" min="0" max="10" step="0.05" value="0.15" />
+        </label>
+        <div class="form-actions full-width">
+          <button type="submit" class="primary">Calculate Home Goal</button>
+          <button type="button" id="useHomeGoal" class="secondary">Send to Goal Planner</button>
+        </div>
+      </form>
+
+      <section id="homeResults" class="results hidden">
+        <div class="metric-grid">
+          <article class="metric card"><span>Projected home price</span><strong id="futureHomePrice"></strong></article>
+          <article class="metric card"><span>Required down payment</span><strong id="futureDownPayment"></strong></article>
+          <article class="metric card"><span>Total cash goal</span><strong id="totalHomeGoal"></strong></article>
+          <article class="metric card"><span>Monthly investment needed</span><strong id="homeMonthlyNeeded"></strong></article>
+        </div>
+        <div class="card">
+          <h3>Cash target breakdown</h3>
+          <div id="homeBreakdown" class="breakdown"></div>
+        </div>
+      </section>
+    </section>
+
+    <section id="saved" class="view">
+      <div class="card intro-card">
+        <div>
+          <h2>Saved goals</h2>
+          <p>Your goals are stored only in this browser on this device.</p>
+        </div>
+        <div class="toolbar">
+          <button id="exportGoals" class="secondary">Export Backup</button>
+          <label class="secondary file-button">Import Backup<input id="importGoals" type="file" accept=".json" /></label>
+        </div>
+      </div>
+      <div id="savedGoalsList" class="saved-list"></div>
+    </section>
+
+    <section id="learn" class="view">
+      <div class="card intro-card">
+        <div>
+          <h2>Research & assumption library 📚</h2>
+          <p>Use authoritative sources to pressure-test the figures you enter.</p>
+        </div>
+      </div>
+
+      <div class="research-grid">
+        <article id="topic-inflation" class="research-card card">
+          <h3>Inflation</h3>
+          <p>Inflation reduces future purchasing power. For long-range planning, test more than one assumption rather than relying only on the latest 12-month figure.</p>
+          <div class="assumption-pills"><button data-set-field="inflationRate" data-value="2">2%</button><button data-set-field="inflationRate" data-value="3">3%</button><button data-set-field="inflationRate" data-value="4">4%</button></div>
+          <a href="https://www.bls.gov/cpi/" target="_blank" rel="noopener">BLS Consumer Price Index ↗</a>
+          <a href="https://www.bls.gov/data/inflation_calculator.htm" target="_blank" rel="noopener">BLS Inflation Calculator ↗</a>
+        </article>
+
+        <article id="topic-returns" class="research-card card">
+          <h3>Investment returns</h3>
+          <p>Historical results vary dramatically by asset mix and time period. Run conservative, base, and optimistic scenarios. Do not treat a historical average as a promised annual return.</p>
+          <div class="assumption-pills"><button data-set-field="annualReturn" data-value="4">4%</button><button data-set-field="annualReturn" data-value="7">7%</button><button data-set-field="annualReturn" data-value="10">10%</button></div>
+          <a href="https://www.investor.gov/financial-tools-calculators/calculators/compound-interest-calculator" target="_blank" rel="noopener">Investor.gov Compound Interest Calculator ↗</a>
+          <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html" target="_blank" rel="noopener">NYU Historical Returns Dataset ↗</a>
+        </article>
+
+        <article id="topic-housing" class="research-card card">
+          <h3>Home-price appreciation</h3>
+          <p>National averages may not reflect your target city, neighborhood, property type, insurance costs, taxes, or maintenance needs.</p>
+          <div class="assumption-pills"><button data-set-field="homeAppreciation" data-value="2">2%</button><button data-set-field="homeAppreciation" data-value="3">3%</button><button data-set-field="homeAppreciation" data-value="5">5%</button></div>
+          <a href="https://www.fhfa.gov/data/hpi" target="_blank" rel="noopener">FHFA House Price Index ↗</a>
+          <a href="https://www.fhfa.gov/data/hpi/datasets" target="_blank" rel="noopener">FHFA Regional Datasets ↗</a>
+        </article>
+
+        <article id="topic-mortgage" class="research-card card">
+          <h3>Mortgage rates</h3>
+          <p>Mortgage rates affect affordability but are separate from the investment return used to grow your down-payment fund.</p>
+          <a href="https://www.freddiemac.com/pmms" target="_blank" rel="noopener">Freddie Mac Current Mortgage Rates ↗</a>
+          <a href="https://www.freddiemac.com/pmms/pmms_archives" target="_blank" rel="noopener">Freddie Mac Historical Rates ↗</a>
+        </article>
+
+        <article id="topic-fees" class="research-card card">
+          <h3>Investment fees</h3>
+          <p>Expense ratios, advisory fees, trading costs, and account fees reduce your net return. Enter the combined annual percentage you expect to pay.</p>
+          <a href="https://www.investor.gov/introduction-investing/getting-started/understanding-fees" target="_blank" rel="noopener">Investor.gov: Understanding Fees ↗</a>
+        </article>
+
+        <article id="topic-contributions" class="research-card card">
+          <h3>Increasing contributions</h3>
+          <p>An annual contribution increase can model raises or a deliberate savings step-up. Use a rate you could realistically maintain.</p>
+          <a href="https://www.investor.gov/financial-tools-calculators/calculators/savings-goal-calculator" target="_blank" rel="noopener">Investor.gov Savings Goal Calculator ↗</a>
+        </article>
+
+        <article id="topic-downpayment" class="research-card card">
+          <h3>Down payments and buying costs</h3>
+          <p>A second-home goal may require the down payment, closing costs, reserves, furnishings, maintenance, taxes, insurance, and possibly higher lending requirements.</p>
+          <a href="https://www.consumerfinance.gov/owning-a-home/" target="_blank" rel="noopener">CFPB Home-Buying Resources ↗</a>
+        </article>
+
+        <article class="research-card card">
+          <h3>Important limitation</h3>
+          <p>This app performs deterministic projections. Actual returns arrive unevenly, investments can lose value, taxes may apply, and goal costs can change. Use the results as planning ranges—not financial advice or guarantees.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
