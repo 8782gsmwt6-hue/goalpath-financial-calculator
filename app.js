@@ -8,7 +8,9 @@ let homeGoalValue = null;
 const defaults = {
   goalName: "Future Goal", goalAmount: 250000, startingBalance: 25000, lumpSum: 0,
   monthlyContribution: 1000, targetYears: 10, annualReturn: 7, annualFees: .15,
-  inflationRate: 3, contributionGrowth: 0
+  inflationRate: 3, contributionGrowth: 0,
+  grossAnnualIncome: 150000, netMonthlyIncome: 8000,
+  monthlyExpenses: 5000, cushionPct: 10
 };
 
 document.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => showView(btn.dataset.view)));
@@ -84,7 +86,7 @@ function project({goal, principal, monthly, annualReturn, fees, inflation, adjus
 const moneyInputIds = [
   "goalAmount", "startingBalance", "lumpSum", "monthlyContribution",
   "homePrice", "closingCosts", "repairReserve", "cashReserve",
-  "homeCurrentBalance"
+  "homeCurrentBalance", "grossAnnualIncome", "netMonthlyIncome", "monthlyExpenses"
 ];
 
 moneyInputIds.forEach(id => {
@@ -145,7 +147,11 @@ function collectInputs() {
     monthlyContribution: val("monthlyContribution"), targetYears: val("targetYears"),
     annualReturn: val("annualReturn"), fees: val("annualFees"), inflation: val("inflationRate"),
     adjustInflation: $("adjustForInflation").checked, timing: $("contributionTiming").value,
-    contributionGrowth: val("contributionGrowth")
+    contributionGrowth: val("contributionGrowth"),
+    grossAnnualIncome: val("grossAnnualIncome"),
+    netMonthlyIncome: val("netMonthlyIncome"),
+    monthlyExpenses: val("monthlyExpenses"),
+    cushionPct: val("cushionPct")
   };
 }
 function formatTime(months) {
@@ -153,6 +159,112 @@ function formatTime(months) {
   const years = Math.floor(months / 12), rem = months % 12;
   return [years ? `${years} year${years === 1 ? "" : "s"}` : "", rem ? `${rem} month${rem === 1 ? "" : "s"}` : ""].filter(Boolean).join(", ");
 }
+
+function capacityAssessment(data) {
+  const i = data.inputs;
+  const grossAnnual = i.grossAnnualIncome;
+  const netMonthly = i.netMonthlyIncome;
+  const expenses = i.monthlyExpenses;
+  const planned = Math.max(0, data.monthly || 0);
+  const disposable = netMonthly - expenses;
+  const desiredCushion = netMonthly * Math.max(0, i.cushionPct) / 100;
+  const remaining = disposable - planned;
+  const maximumWithinCushion = Math.max(0, disposable - desiredCushion);
+  const contributionShareDisposable = disposable > 0 ? planned / disposable : Infinity;
+  const contributionShareNet = netMonthly > 0 ? planned / netMonthly : Infinity;
+  const expenseShareNet = netMonthly > 0 ? expenses / netMonthly : Infinity;
+  const takeHomeRate = grossAnnual > 0 ? (netMonthly * 12) / grossAnnual : null;
+
+  let score = 100;
+  const reasons = [];
+
+  if (netMonthly <= 0) {
+    score = 0;
+    reasons.push({type:"bad", text:"Net monthly income must be greater than $0."});
+  } else if (expenses >= netMonthly) {
+    score = 0;
+    reasons.push({type:"bad", text:"Current expenses use all or more than your net income before funding this goal."});
+  } else {
+    if (contributionShareDisposable <= 0.50) {
+      reasons.push({type:"good", text:"The goal uses no more than half of current disposable income."});
+    } else if (contributionShareDisposable <= 0.65) {
+      score -= 10;
+      reasons.push({type:"warn", text:"The goal uses more than 50% of disposable income."});
+    } else if (contributionShareDisposable <= 0.80) {
+      score -= 25;
+      reasons.push({type:"warn", text:"The goal uses a large share of disposable income and leaves less flexibility."});
+    } else if (contributionShareDisposable <= 0.90) {
+      score -= 45;
+      reasons.push({type:"bad", text:"The contribution consumes nearly all disposable income."});
+    } else if (contributionShareDisposable <= 1) {
+      score -= 65;
+      reasons.push({type:"bad", text:"The contribution leaves almost no monthly margin for irregular costs."});
+    } else {
+      score = 0;
+      reasons.push({type:"bad", text:"The planned investment exceeds current disposable income."});
+    }
+
+    const remainingShareNet = remaining / netMonthly;
+    if (remaining < 0) {
+      score = 0;
+    } else if (remaining < desiredCushion) {
+      score -= 20;
+      reasons.push({type:"warn", text:`The plan leaves less than your selected ${number.format(i.cushionPct)}% monthly cushion.`});
+    } else {
+      reasons.push({type:"good", text:`The plan preserves at least your selected ${number.format(i.cushionPct)}% monthly cushion.`});
+    }
+
+    if (expenseShareNet > 0.90) score -= 25;
+    else if (expenseShareNet > 0.80) score -= 15;
+    else if (expenseShareNet > 0.70) score -= 5;
+  }
+
+  if (takeHomeRate !== null && (takeHomeRate > 1 || takeHomeRate < 0.35)) {
+    score -= 5;
+    reasons.push({type:"warn", text:"Gross and net income appear unusual relative to each other. Confirm that gross is annual and net is monthly."});
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  const label =
+    score >= 90 ? "Very Realistic" :
+    score >= 75 ? "Realistic with Discipline" :
+    score >= 50 ? "Tight — Adjustment Recommended" :
+    score >= 25 ? "High Financial Strain" :
+    "Not Currently Feasible";
+
+  return {
+    score, label, grossAnnual, netMonthly, expenses, planned, disposable,
+    desiredCushion, remaining, maximumWithinCushion,
+    contributionShareDisposable, contributionShareNet, expenseShareNet,
+    takeHomeRate, reasons
+  };
+}
+
+function renderCapacity(data) {
+  const c = capacityAssessment(data);
+  $("capacityScore").textContent = c.score;
+  $("capacityHeadline").textContent = c.label;
+  $("capacityDisposable").textContent = money.format(c.disposable);
+  $("capacityInvestment").textContent = `${money.format(c.planned)}/mo`;
+  $("capacityRemaining").textContent = money.format(c.remaining);
+  $("capacityMaximum").textContent = `${money.format(c.maximumWithinCushion)}/mo`;
+
+  const shareText = Number.isFinite(c.contributionShareDisposable)
+    ? `${number.format(c.contributionShareDisposable * 100)}% of disposable income`
+    : "Not calculable";
+
+  $("capacitySummary").textContent =
+    `The planned contribution is ${shareText} and ${number.format(c.contributionShareNet * 100)}% of net monthly income.`;
+
+  const takeHome = c.takeHomeRate === null ? "Not available" : `${number.format(c.takeHomeRate * 100)}%`;
+  $("capacityDetails").innerHTML = `
+    <p><strong>Monthly cash flow:</strong> ${money.format(c.netMonthly)} net income − ${money.format(c.expenses)} expenses = ${money.format(c.disposable)} disposable income.</p>
+    <p><strong>After goal investing:</strong> ${money.format(c.remaining)} remains each month.</p>
+    <p><strong>Estimated take-home rate:</strong> ${takeHome} of gross annual income.</p>
+    ${c.reasons.map(r => `<p class="${r.type}">${r.type === "good" ? "✓" : r.type === "warn" ? "⚠" : "✕"} ${r.text}</p>`).join("")}
+  `;
+}
+
 function healthScore(data) {
   let score = 100;
   if (!data.reached) score -= 45;
@@ -181,6 +293,7 @@ function renderResults(data) {
   $("metricTime").textContent = formatTime(data.months);
   $("metricContributions").textContent = money.format(data.contributions);
   $("metricGrowth").textContent = money.format(data.growth);
+  renderCapacity(data);
   renderWarnings(data);
   renderScenarios(data);
   renderTable(data.rows);
@@ -195,6 +308,10 @@ function renderWarnings(data) {
   if (inf < 2) items.push("The inflation assumption is low for a long-term plan. Consider testing 3% or 4%.");
   if (!data.inputs.adjustInflation && data.months > 60) items.push("The goal is not inflation-adjusted, so its future purchasing power may be lower.");
   if (data.inputs.fees > 1) items.push("Annual fees above 1% can materially reduce long-term compounding.");
+  const capacity = capacityAssessment(data);
+  if (capacity.score < 25) items.push("The planned contribution is not currently supported by the income and expense figures entered.");
+  else if (capacity.score < 50) items.push("The goal creates substantial monthly cash-flow pressure.");
+  else if (capacity.score < 75) items.push("The goal may be obtainable, but the monthly budget has limited room for unexpected costs.");
   if (!items.length) items.push("Your assumptions are within commonly tested planning ranges, but actual outcomes can still differ substantially.");
   $("assumptionWarnings").innerHTML = `<h3>Assumption check</h3><ul>${items.map(i => `<li>${i}</li>`).join("")}</ul>`;
 }
@@ -286,6 +403,11 @@ function loadSaved(id){
   setMode(g.mode||"time"); $("goalName").value=g.name;$("goalAmount").value=g.goal;$("startingBalance").value=g.startingBalance;$("lumpSum").value=g.lumpSum;
   $("monthlyContribution").value=g.monthlyContribution;$("targetYears").value=g.targetYears;$("annualReturn").value=g.annualReturn;$("annualFees").value=g.fees;
   $("inflationRate").value=g.inflation;$("adjustForInflation").checked=g.adjustInflation;$("contributionTiming").value=g.timing;$("contributionGrowth").value=g.contributionGrowth;
+  $("grossAnnualIncome").value=g.grossAnnualIncome ?? defaults.grossAnnualIncome;
+  $("netMonthlyIncome").value=g.netMonthlyIncome ?? defaults.netMonthlyIncome;
+  $("monthlyExpenses").value=g.monthlyExpenses ?? defaults.monthlyExpenses;
+  $("cushionPct").value=g.cushionPct ?? defaults.cushionPct;
+  moneyInputIds.forEach(id => formatMoneyInput($(id)));
   showView("planner"); calculateGoal(); toast("Saved goal loaded.");
 }
 function deleteSaved(id){localStorage.setItem("goalpath_goals",JSON.stringify(getSaved().filter(g=>g.id!==id)));renderSavedGoals();toast("Goal deleted.");}

@@ -155,3 +155,49 @@ th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-s
   .metric strong { font-size: 1.08rem; }
   .app-header { padding-left: 17px; padding-right: 17px; }
 }
+
+
+.section-divider {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 20px;
+}
+.section-divider h3 { margin-bottom: 4px; }
+.section-divider p:last-child { margin: 0; color: var(--muted); font-weight: 500; }
+
+.capacity-card { border-top: 5px solid var(--primary); }
+.capacity-card .section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.score-orb {
+  flex: 0 0 78px;
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 7px solid var(--primary);
+  font-size: 1.55rem;
+  font-weight: 900;
+}
+.capacity-metrics { margin-bottom: 14px; }
+.metric.mini { box-shadow: none; margin: 0; background: var(--surface-2); }
+.capacity-details {
+  padding: 14px;
+  border-radius: 13px;
+  background: var(--surface-2);
+}
+.capacity-details p { margin: 5px 0; }
+.capacity-details .good { color: var(--accent); font-weight: 800; }
+.capacity-details .warn { color: var(--warning); font-weight: 800; }
+.capacity-details .bad { color: var(--danger); font-weight: 800; }
+
+@media (max-width: 600px) {
+  .capacity-card .section-heading { align-items: flex-start; }
+  .score-orb { width: 68px; height: 68px; flex-basis: 68px; font-size: 1.35rem; }
+}

@@ -43,3 +43,18 @@ This application provides deterministic planning illustrations, not predictions,
 ## Version 1.1
 
 Improved iPhone/Safari money-field handling. Amounts may now be entered or pasted with dollar signs, commas, spaces, or quotation marks.
+
+
+## Version 1.2 — Financial Capacity
+
+Added:
+- Gross annual income
+- Net monthly income
+- Current monthly expenses
+- User-selected monthly cushion
+- Disposable-income calculation
+- Maximum monthly contribution while preserving the selected cushion
+- Financial Reasonability Score from 0–100
+- Cash-flow warnings when a goal exceeds or strains available income
+
+The score is a planning aid, not a bankruptcy determination, credit decision, or substitute for a full financial review.

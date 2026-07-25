@@ -117,6 +117,40 @@
           <input id="contributionGrowth" type="number" min="0" max="20" step="0.5" value="0" />
         </label>
 
+
+        <div class="full-width section-divider">
+          <div>
+            <p class="eyebrow">FINANCIAL CAPACITY</p>
+            <h3>Can this goal fit your real monthly budget?</h3>
+            <p>These figures stay on your device and are used only to estimate affordability.</p>
+          </div>
+        </div>
+
+        <label>
+          Gross yearly income
+          <span class="input-prefix">$</span>
+          <input id="grossAnnualIncome" type="text" inputmode="decimal" autocomplete="off" value="150,000" />
+        </label>
+
+        <label>
+          Net monthly income
+          <span class="input-prefix">$</span>
+          <input id="netMonthlyIncome" type="text" inputmode="decimal" autocomplete="off" value="8,000" />
+        </label>
+
+        <label>
+          Current monthly expenses
+          <span class="input-prefix">$</span>
+          <input id="monthlyExpenses" type="text" inputmode="decimal" autocomplete="off" value="5,000" />
+        </label>
+
+        <label>
+          Desired monthly cushion
+          <span class="input-suffix">% of net</span>
+          <input id="cushionPct" type="number" min="0" max="50" step="1" value="10" />
+          <small>Cash left after expenses and goal investing.</small>
+        </label>
+
         <div class="form-actions full-width">
           <button type="submit" class="primary">Calculate Goal</button>
           <button type="button" id="saveGoal" class="secondary">Save Goal</button>
@@ -137,6 +171,27 @@
           <article class="metric card"><span>Time required</span><strong id="metricTime"></strong></article>
           <article class="metric card"><span>Your contributions</span><strong id="metricContributions"></strong></article>
           <article class="metric card"><span>Estimated growth</span><strong id="metricGrowth"></strong></article>
+        </div>
+
+
+        <div class="card capacity-card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">REASONABILITY SCORE</p>
+              <h3 id="capacityHeadline">Financial capacity</h3>
+              <p id="capacitySummary"></p>
+            </div>
+            <div id="capacityScore" class="score-orb">--</div>
+          </div>
+
+          <div class="metric-grid capacity-metrics">
+            <article class="metric mini"><span>Disposable income</span><strong id="capacityDisposable"></strong></article>
+            <article class="metric mini"><span>Goal investment</span><strong id="capacityInvestment"></strong></article>
+            <article class="metric mini"><span>Remaining monthly cash</span><strong id="capacityRemaining"></strong></article>
+            <article class="metric mini"><span>Maximum within cushion</span><strong id="capacityMaximum"></strong></article>
+          </div>
+
+          <div id="capacityDetails" class="capacity-details"></div>
         </div>
 
         <div id="assumptionWarnings" class="card warning-card"></div>
